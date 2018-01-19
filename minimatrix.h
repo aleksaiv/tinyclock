@@ -3,6 +3,7 @@
 
 unsigned char reverse(unsigned char b);
 
+
 #define OP_NOOP   0
 #define OP_DIGIT0 1
 #define OP_DIGIT1 2
@@ -56,10 +57,13 @@ class MiniMatrix {
     void clearDisplay();
     void printChar(int x, byte ch);
     void setFont(byte *newfont);
-    void setDigit(int x, byte digit);
+    // void setDigit(int x, byte digit);
     void showBuffer();
     void setIntensity(int intensity);
     void setLed(int addr, int row, int column, boolean state);
+    bool getLed(int row, int column);
+    void eat();
+    void invert();
 };
 
 #endif

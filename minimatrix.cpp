@@ -20,8 +20,9 @@ MiniMatrix::MiniMatrix(int dataPin, int clkPin, int csPin, int numDevices) {
       pinMode(SPI_CLK,OUTPUT);
       pinMode(SPI_CS,OUTPUT);
       digitalWrite(SPI_CS,HIGH);
-      for(int i=0;i<32;i++) 
+      for(int i=0;i<32;i++){
           status[i]=0x00;
+      }
       for(int i=0;i<maxDevices;i++) {
           spiTransfer(i,OP_DISPLAYTEST,0);
           //scanlimit is set to max on startup
@@ -62,7 +63,7 @@ MiniMatrix::MiniMatrix(int dataPin, int clkPin, int csPin, int numDevices) {
     void MiniMatrix::setFont(byte *newfont) {
       font=newfont;
     }
-    void MiniMatrix::setDigit(int x, byte digit){
+    /* void MiniMatrix::setDigit(int x, byte digit){
       byte val;
       byte tmp;
       for(int row=0;row<8;row++) {
@@ -79,7 +80,7 @@ MiniMatrix::MiniMatrix(int dataPin, int clkPin, int csPin, int numDevices) {
           status[(x/2)*8+row]=(status[(x/2)*8+row] & 0xF0) | val;
         }
       }
-    }
+    } */
     void MiniMatrix::printChar(int x, byte ch){
       byte val;
       byte tmp;
@@ -146,4 +147,64 @@ MiniMatrix::MiniMatrix(int dataPin, int clkPin, int csPin, int numDevices) {
       //latch the data onto the display
       digitalWrite(SPI_CS,HIGH);
     }
+bool MiniMatrix::getLed(int row, int column){
+  int offset;
+  if( (row < 0) || (row > 7) || (column < 0) || (column >31) )
+    return false;
+  offset=column/8;
+  offset=offset*8;
+  if( status[ offset + row ] & (B10000000 >> (column %8)) )
+    return true;
+  else 
+    return false;
+}
+void MiniMatrix::eat(){
+  int x = 0, y = 0;
+  bool found = false;
+  do {
+    found = false;
+    if( getLed(y, x + 1) ){
+      x = x + 1;
+      found = true;
+    } else
+    if( getLed(y, x - 1) ){
+      x = x - 1;
+      found = true;
+    } else 
+    if( getLed(y + 1, x) ){
+      y = y + 1;
+      found = true;
+    } else
+    if( getLed(y - 1, x) ){
+      y = y - 1;
+      found = true;
+    }
+    if(!found){
+        for( int l = 1; l < 32; l++ ){
+          for( int i = y - l; i <= y + l; i++){
+            for( int j = x -l; j <= x + l; j++){
+              if( getLed(i, j) ){
+                x = j;
+                y = i;
+                found = true;
+                break;
+              }
+            }
+            if(found)
+              break;
+          }
+          if(found)
+            break;
+        }
+    }
+    setLed( x/8, y, x%8, false);
+    showBuffer();
+    delay(25);
+  } while(found);
+}
+void MiniMatrix::invert()
+{
+  for(int i=0;i<32;i++)
+    status[i]=~status[i];
+}
 
